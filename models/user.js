@@ -2,26 +2,25 @@ const { Schema, model } = require("mongoose");
 const Joi = require("joi");
 const { handleMongooseError } = require("../helpers");
 
-const emailRegExp = /[a-z0-9]+@[a-z]+\.[a-z]{2,3}/;
+const emailRedex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
 
-const userSchema = Schema(
+const userSchema = new Schema(
   {
     name: {
       type: String,
-      required: [true, "Name is required"],
+      required: true,
     },
     email: {
       type: String,
-      match: emailRegExp,
-      required: [true, "Email is required"],
+      match: emailRedex,
       unique: true,
+      required: [true, "Email is required"],
     },
     password: {
       type: String,
       minlength: 6,
       required: [true, "Password is required"],
     },
-
     subscription: {
       type: String,
       enum: ["starter", "pro", "business"],
@@ -29,7 +28,7 @@ const userSchema = Schema(
     },
     token: {
       type: String,
-      default: null,
+      default: "",
     },
   },
   { versionKey: false, timestamps: true }
@@ -38,23 +37,25 @@ const userSchema = Schema(
 userSchema.post("save", handleMongooseError);
 
 const registerSchema = Joi.object({
-  name: Joi.string().required(),
-  email: Joi.string().pattern(emailRegExp).required(),
+  name: Joi.string().min(3).max(25).required(),
+  email: Joi.string().pattern(emailRedex).required(),
   password: Joi.string().min(6).required(),
-  subscription: Joi.string().valueOf("starter", "pro", "business"),
-});
-const loginSchema = Joi.object({
-  email: Joi.string().pattern(emailRegExp).required(),
-  password: Joi.string().min(6).required(),
-});
-const subscriptionSchema = Joi.object({
-  subscription: Joi.string().valueOf("starter", "pro", "business").required(),
 });
 
+const loginSchema = Joi.object({
+  email: Joi.string().pattern(emailRedex).required(),
+  password: Joi.string().min(6).required(),
+});
+
+const updateSubscriptionSchema = Joi.object({
+  subscription: Joi.string().valid("starter", "pro", "business").required()
+})
+
+
 const schemas = {
-  register: registerSchema,
-  login: loginSchema,
-  subscription: subscriptionSchema,
+  registerSchema,
+  loginSchema,
+  updateSubscriptionSchema
 };
 
 const User = model("user", userSchema);
