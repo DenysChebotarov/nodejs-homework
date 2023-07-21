@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const gravatar = require('gravatar');
 const path = require("path");
 const fs = require("fs/promises");
+const Jimp = require("jimp");
 const { SECRET_KEY } = process.env;
 const avatarsDir = path.join(__dirname, "../", "public", "avatars");
 
@@ -93,6 +94,13 @@ const updateAvatar = async(req, res)=> {
   const resultUpload = path.join(avatarsDir, filename);
   await fs.rename(tempUpload, resultUpload);
   const avatarURL = path.join("avatars", filename);
+  const normalAvatarURL = path.join("public/avatars", filename);
+
+  Jimp.read(normalAvatarURL, (error, newName) => {
+    if (error) throw error;
+    newName.resize(250, 250).quality(60).write(normalAvatarURL);
+  });
+
   await User.findByIdAndUpdate(_id, {avatarURL});
 
   res.json({
