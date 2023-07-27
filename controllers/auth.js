@@ -2,10 +2,10 @@ const { User, schemas } = require("../models/user");
 const { HttpError, ctrlWrapper, sendEmail } = require("../helpers");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const gravatar = require('gravatar');
+const gravatar = require("gravatar");
 const path = require("path");
 const fs = require("fs/promises");
-const {nanoid} = require("nanoid");
+const { nanoid } = require("nanoid");
 const Jimp = require("jimp");
 const { SECRET_KEY, BASE_URL } = process.env;
 const avatarsDir = path.join(__dirname, "../", "public", "avatars");
@@ -21,15 +21,19 @@ const register = async (req, res) => {
   const avatarURL = gravatar.url(email);
   const verificationToken = nanoid();
 
-
-  const newUser = await User.create({ ...req.body, password: hashPassword, avatarURL, verificationToken });
+  const newUser = await User.create({
+    ...req.body,
+    password: hashPassword,
+    avatarURL,
+    verificationToken,
+  });
 
   const verifyEmail = {
     to: email,
     subject: "Verify email",
-    html: `<a target="_blank" href="${BASE_URL}/api/auth/verify/${verificationToken}">Click verify email</a>`
-};
-await sendEmail(verifyEmail);
+    html: `<a target="_blank" href="${BASE_URL}/api/auth/verify/${verificationToken}">Click verify email</a>`,
+  };
+  await sendEmail(verifyEmail);
 
   res.status(201).json({
     email: newUser.email,
@@ -83,9 +87,9 @@ const login = async (req, res) => {
   if (!user) {
     throw HttpError(401, "Invalid email or password");
   }
-  if(!user.verify) {
+  if (!user.verify) {
     throw HttpError(401, "Email not verified");
-}
+  }
   const passwordCompare = await bcrypt.compare(password, user.password);
   if (!passwordCompare) {
     throw HttpError(401, "Invalid email or password");
@@ -140,9 +144,9 @@ const updateSubscription = async (req, res) => {
   res.json({ subscription: user.subscription });
 };
 
-const updateAvatar = async(req, res)=> {
-  const {_id} = req.user;
-  const {path: tempUpload, originalname} = req.file;
+const updateAvatar = async (req, res) => {
+  const { _id } = req.user;
+  const { path: tempUpload, originalname } = req.file;
   const filename = `${_id}_${originalname}`;
   const resultUpload = path.join(avatarsDir, filename);
   await fs.rename(tempUpload, resultUpload);
@@ -154,12 +158,12 @@ const updateAvatar = async(req, res)=> {
     newName.resize(250, 250).quality(60).write(normalAvatarURL);
   });
 
-  await User.findByIdAndUpdate(_id, {avatarURL});
+  await User.findByIdAndUpdate(_id, { avatarURL });
 
   res.json({
-      avatarURL,
-  })
-}
+    avatarURL,
+  });
+};
 
 module.exports = {
   register: ctrlWrapper(register),
